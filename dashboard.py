@@ -657,7 +657,13 @@ with tab_drift:
                        f"(baseline: {BASELINE_FRAUD_RATE}%).")
 
         # Rolling fraud rate chart
-        window = st.slider("Rolling window size", 3, min(50, total), min(10, total))
+        max_window = min(50, total)
+        min_window = min(3, max_window)
+        default_window = min(10, max_window)
+        if max_window > min_window:
+            window = st.slider("Rolling window size", min_window, max_window, default_window)
+        else:
+            window = max_window
         df_s   = df.sort_values("timestamp").reset_index(drop=True)
         df_s["is_fraud"]   = (df_s["prediction"] == "FRAUD").astype(int)
         df_s["rolling_rate"] = (
