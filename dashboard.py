@@ -201,6 +201,52 @@ def load_history():
         return pd.DataFrame()
 
 
+# ── Welcome dialog (shown once per session) ───────────────────────────────────
+@st.dialog("👋 Welcome to the Fraud Detection Platform", width="large")
+def show_welcome():
+    st.markdown("""
+### What is this?
+This demo shows how a bank decides — in under a second — whether your card swipe is **genuine or fraud**.
+
+You describe a transaction, click a button, and the AI tells you: ✅ **LEGIT** or 🚨 **FRAUD**.
+
+---
+
+### How to use it in 3 steps
+
+| Step | What to do |
+|---|---|
+| **1** | Pick a scenario from the **left panel** (e.g. "Suspicious High-Value Transfer") |
+| **2** | Click the blue **"Analyze Transaction"** button |
+| **3** | See the result — green means safe, red means flagged |
+
+---
+
+### Try this example right now
+
+1. On the **left panel**, open the dropdown and select **"Suspicious High-Value Transfer"**
+2. Click **"🔍 Analyze Transaction"**
+3. You will see a big **🚨 FRAUD** result with ~99% fraud probability
+
+Then try **"Normal Online Purchase"** and watch it flip to ✅ **LEGIT**.
+
+---
+
+### Explore the 4 tabs
+- **🔍 Make a Prediction** — test any transaction
+- **📋 Prediction History** — see all your tests this session
+- **📈 Drift Monitor** — track fraud rate over time
+- **🤖 Model Info** — see how accurate the AI is
+""")
+    st.divider()
+    if st.button("🚀 Let's Go!", type="primary", use_container_width=True):
+        st.session_state.welcome_shown = True
+        st.rerun()
+
+if "welcome_shown" not in st.session_state:
+    show_welcome()
+
+
 # ── CSS styling ───────────────────────────────────────────────────────────────
 st.markdown("""
 <style>
@@ -209,28 +255,28 @@ st.markdown("""
     background: linear-gradient(135deg, #ff4b4b, #c0392b);
     color: white; border-radius: 16px; padding: 28px 32px;
     text-align: center; margin: 12px 0;
-    box-shadow: 0 4px 20px rgba(255,75,75,0.4);
+    box-shadow: 0 4px 20px rgba(255,75,75,0.3);
 }
 .legit-card {
     background: linear-gradient(135deg, #00c851, #007e33);
     color: white; border-radius: 16px; padding: 28px 32px;
     text-align: center; margin: 12px 0;
-    box-shadow: 0 4px 20px rgba(0,200,81,0.4);
+    box-shadow: 0 4px 20px rgba(0,200,81,0.3);
 }
 .card-label  { font-size: 2.8rem; font-weight: 800; letter-spacing: 4px; }
 .card-sub    { font-size: 1.1rem; opacity: 0.9; margin-top: 6px; }
 /* Metric boxes */
 .metric-row  { display: flex; gap: 16px; margin: 12px 0; }
 .metric-box  {
-    background: #1e1e2e; border-radius: 12px; padding: 16px 20px;
-    flex: 1; border: 1px solid #333;
+    background: #f0f4ff; border-radius: 12px; padding: 16px 20px;
+    flex: 1; border: 1px solid #c7d2fe;
 }
-.metric-val  { font-size: 1.8rem; font-weight: 700; color: #a6e3a1; }
-.metric-lbl  { font-size: 0.8rem; color: #888; margin-top: 2px; }
+.metric-val  { font-size: 1.8rem; font-weight: 700; color: #16a34a; }
+.metric-lbl  { font-size: 0.8rem; color: #64748b; margin-top: 2px; }
 /* Section header */
 .section-hdr {
-    font-size: 1.1rem; font-weight: 600; color: #cdd6f4;
-    border-left: 4px solid #89b4fa; padding-left: 10px; margin: 20px 0 10px;
+    font-size: 1.1rem; font-weight: 600; color: #1e40af;
+    border-left: 4px solid #3b82f6; padding-left: 10px; margin: 20px 0 10px;
 }
 </style>
 """, unsafe_allow_html=True)
@@ -276,6 +322,8 @@ with st.sidebar:
     st.divider()
     st.markdown("**Dataset:** Kaggle Credit Card Fraud  \n284,807 transactions · 492 fraud (0.17%)")
     st.markdown("**Model:** Random Forest · F1=0.91 · AUC=0.98")
+    st.divider()
+    st.markdown("Built by **Arya Patel**")
 
 
 # ═════════════════════════════════════════════════════════════════════════════
@@ -403,9 +451,9 @@ with tab_predict:
                     "axis": {"range": [0, 100], "tickwidth": 1},
                     "bar":  {"color": "#ff4b4b" if label == "FRAUD" else "#00c851"},
                     "steps": [
-                        {"range": [0,  10], "color": "#1a2744"},
-                        {"range": [10, 50], "color": "#2a3a5c"},
-                        {"range": [50, 100], "color": "#3d1a1a"},
+                        {"range": [0,  10], "color": "#d1fae5"},
+                        {"range": [10, 50], "color": "#fef9c3"},
+                        {"range": [50, 100], "color": "#fee2e2"},
                     ],
                     "threshold": {
                         "line": {"color": "orange", "width": 3},
@@ -415,7 +463,7 @@ with tab_predict:
             ))
             gauge.update_layout(
                 height=300, margin=dict(l=30, r=30, t=60, b=10),
-                paper_bgcolor="rgba(0,0,0,0)", font_color="white",
+                paper_bgcolor="rgba(0,0,0,0)", font_color="#1e293b",
             )
             st.plotly_chart(gauge, use_container_width=True)
 
@@ -443,7 +491,7 @@ with tab_predict:
                 xaxis_title="Model Importance", yaxis_title="",
                 height=420, margin=dict(l=10, r=160, t=50, b=30),
                 paper_bgcolor="rgba(0,0,0,0)", plot_bgcolor="rgba(0,0,0,0)",
-                font_color="white", yaxis={"autorange": "reversed"},
+                font_color="#1e293b", yaxis={"autorange": "reversed"},
             )
             st.plotly_chart(fig_feat, use_container_width=True)
 
@@ -463,7 +511,7 @@ with tab_predict:
         fig.update_layout(
             height=320, showlegend=False, coloraxis_showscale=False,
             paper_bgcolor="rgba(0,0,0,0)", plot_bgcolor="rgba(0,0,0,0)",
-            font_color="white", margin=dict(l=10, r=20, t=20, b=20),
+            font_color="#1e293b", margin=dict(l=10, r=20, t=20, b=20),
             yaxis={"autorange": "reversed"},
         )
         st.plotly_chart(fig, use_container_width=True)
@@ -509,7 +557,7 @@ with tab_history:
                     x=subset["index"], y=subset["fraud_prob"],
                     mode="markers",
                     marker=dict(color=color, size=10, symbol="circle",
-                                line=dict(width=1, color="white")),
+                                line=dict(width=1, color="#e2e8f0")),
                     name=pred,
                     text=subset.apply(
                         lambda r: f"User: {r['user_id']}<br>"
@@ -523,7 +571,7 @@ with tab_history:
             title="Fraud Probability per Prediction",
             xaxis_title="Prediction #", yaxis_title="P(Fraud)",
             height=360, paper_bgcolor="rgba(0,0,0,0)",
-            plot_bgcolor="rgba(0,0,0,0)", font_color="white",
+            plot_bgcolor="rgba(0,0,0,0)", font_color="#1e293b",
             legend=dict(bgcolor="rgba(0,0,0,0)"),
         )
         st.plotly_chart(fig_tl, use_container_width=True)
@@ -539,7 +587,7 @@ with tab_history:
             )
             fig_pie.update_layout(
                 height=300, paper_bgcolor="rgba(0,0,0,0)",
-                font_color="white", margin=dict(t=50, b=10),
+                font_color="#1e293b", margin=dict(t=50, b=10),
             )
             st.plotly_chart(fig_pie, use_container_width=True)
 
@@ -552,7 +600,7 @@ with tab_history:
             )
             fig_amt.update_layout(
                 height=300, paper_bgcolor="rgba(0,0,0,0)",
-                plot_bgcolor="rgba(0,0,0,0)", font_color="white",
+                plot_bgcolor="rgba(0,0,0,0)", font_color="#1e293b",
                 margin=dict(t=50, b=10),
             )
             st.plotly_chart(fig_amt, use_container_width=True)
@@ -564,7 +612,7 @@ with tab_history:
         show_df = df[display_cols].sort_values("timestamp", ascending=False).head(50)
         st.dataframe(
             show_df.style.apply(
-                lambda col: ["background-color:#3d1a1a; color:#ff8080"
+                lambda col: ["background-color:#fee2e2; color:#dc2626"
                              if v == "FRAUD" else "" for v in col]
                 if col.name == "prediction" else [""] * len(col),
                 axis=0,
@@ -620,23 +668,23 @@ with tab_drift:
         fig_drift = go.Figure()
         fig_drift.add_trace(go.Scatter(
             x=df_s["index"], y=df_s["rolling_rate"],
-            fill="tozeroy", fillcolor="rgba(137,180,250,0.15)",
-            line=dict(color="#89b4fa", width=2.5),
+            fill="tozeroy", fillcolor="rgba(59,130,246,0.1)",
+            line=dict(color="#2563eb", width=2.5),
             name=f"Rolling {window}-pred fraud rate",
         ))
         fig_drift.add_hline(y=BASELINE_FRAUD_RATE, line_dash="dot",
-                             line_color="#a6e3a1", line_width=2,
+                             line_color="#16a34a", line_width=2,
                              annotation_text=f"Baseline {BASELINE_FRAUD_RATE}%",
-                             annotation_font_color="#a6e3a1")
+                             annotation_font_color="#16a34a")
         fig_drift.add_hline(y=10, line_dash="dash",
-                             line_color="#f38ba8", line_width=2,
+                             line_color="#dc2626", line_width=2,
                              annotation_text="Warning threshold 10%",
-                             annotation_font_color="#f38ba8")
+                             annotation_font_color="#dc2626")
         fig_drift.update_layout(
             title="Rolling Fraud Rate Over Time",
             xaxis_title="Prediction #", yaxis_title="Fraud rate (%)",
             height=380, paper_bgcolor="rgba(0,0,0,0)",
-            plot_bgcolor="rgba(0,0,0,0)", font_color="white",
+            plot_bgcolor="rgba(0,0,0,0)", font_color="#1e293b",
             legend=dict(bgcolor="rgba(0,0,0,0)"),
         )
         st.plotly_chart(fig_drift, use_container_width=True)
@@ -646,18 +694,18 @@ with tab_drift:
         fig_conf = go.Figure()
         fig_conf.add_trace(go.Scatter(
             x=df_s["index"], y=df_s["rolling_conf"],
-            fill="tozeroy", fillcolor="rgba(203,166,247,0.15)",
-            line=dict(color="#cba6f7", width=2),
+            fill="tozeroy", fillcolor="rgba(124,58,237,0.1)",
+            line=dict(color="#7c3aed", width=2),
             name="Rolling avg confidence",
         ))
-        fig_conf.add_hline(y=0.6, line_dash="dot", line_color="#fab387",
+        fig_conf.add_hline(y=0.6, line_dash="dot", line_color="#ea580c",
                             annotation_text="Min healthy confidence (60%)",
-                            annotation_font_color="#fab387")
+                            annotation_font_color="#ea580c")
         fig_conf.update_layout(
             title="Model Confidence Over Time (low = uncertain predictions)",
             xaxis_title="Prediction #", yaxis_title="Confidence",
             height=280, paper_bgcolor="rgba(0,0,0,0)",
-            plot_bgcolor="rgba(0,0,0,0)", font_color="white",
+            plot_bgcolor="rgba(0,0,0,0)", font_color="#1e293b",
             yaxis=dict(range=[0, 1]),
         )
         st.plotly_chart(fig_conf, use_container_width=True)
@@ -707,7 +755,7 @@ with tab_model:
         )
         fig_dist.update_layout(
             height=260, paper_bgcolor="rgba(0,0,0,0)",
-            font_color="white", margin=dict(t=50, b=10),
+            font_color="#1e293b", margin=dict(t=50, b=10),
         )
         st.plotly_chart(fig_dist, use_container_width=True)
 
@@ -736,12 +784,12 @@ with tab_model:
         )
         fig_cm = px.imshow(
             cm_data, text_auto=True,
-            color_continuous_scale=[[0, "#1e1e2e"], [0.5, "#313244"], [1, "#89b4fa"]],
+            color_continuous_scale=[[0, "#f0f9ff"], [0.5, "#93c5fd"], [1, "#1d4ed8"]],
             title="Confusion Matrix",
         )
         fig_cm.update_layout(
             height=280, paper_bgcolor="rgba(0,0,0,0)",
-            font_color="white", margin=dict(t=50, b=10),
+            font_color="#1e293b", margin=dict(t=50, b=10),
             coloraxis_showscale=False,
         )
         st.plotly_chart(fig_cm, use_container_width=True)
@@ -763,7 +811,7 @@ with tab_model:
     fig_fi.update_traces(textposition="outside")
     fig_fi.update_layout(
         height=750, paper_bgcolor="rgba(0,0,0,0)",
-        plot_bgcolor="rgba(0,0,0,0)", font_color="white",
+        plot_bgcolor="rgba(0,0,0,0)", font_color="#1e293b",
         yaxis={"autorange": "reversed", "title": ""},
         coloraxis_showscale=False,
         margin=dict(l=10, r=100, t=20, b=20),
@@ -792,3 +840,12 @@ creditcard.csv ──► producer.py ──────────────�
                                      drift_check.py
                                      drift_report.png
     """, language="text")
+
+# ── Footer ────────────────────────────────────────────────────────────────────
+st.divider()
+st.markdown(
+    "<div style='text-align:center; color:#64748b; font-size:0.85rem; padding:8px 0'>"
+    "Fraud Detection Platform &nbsp;·&nbsp; Built by <strong>Arya Patel</strong>"
+    "</div>",
+    unsafe_allow_html=True,
+)
