@@ -1,0 +1,47 @@
+# ── Large data files ──────────────────────────────────────────────────────────
+creditcard.csv
+*.arff
+
+# ── MLflow local server data (not needed; model is bundled as model.joblib) ───
+mlflow_local/
+
+# ── Claude Code settings (private) ────────────────────────────────────────────
+.claude/
+
+# ── Spark ─────────────────────────────────────────────────────────────────────
+checkpoints/
+hive_warehouse/
+
+# ── Runtime outputs ───────────────────────────────────────────────────────────
+predictions_log.csv
+drift_report.png
+*.log
+
+# ── Python ────────────────────────────────────────────────────────────────────
+__pycache__/
+*.py[cod]
+*.pyo
+*.pyd
+.Python
+*.egg-info/
+dist/
+build/
+.eggs/
+*.egg
+
+# ── Virtual environments ──────────────────────────────────────────────────────
+venv/
+.venv/
+env/
+.env/
+
+# ── OS ────────────────────────────────────────────────────────────────────────
+.DS_Store
+Thumbs.db
+desktop.ini
+
+# ── IDEs ──────────────────────────────────────────────────────────────────────
+.vscode/
+.idea/
+*.swp
+*.swo

@@ -1,0 +1,154 @@
+version: "3.8"
+
+services:
+
+  # ── Zookeeper ─────────────────────────────────────────────────────────────
+  # Kafka requires Zookeeper for cluster coordination and leader election.
+  zookeeper:
+    image: confluentinc/cp-zookeeper:7.5.0
+    container_name: zookeeper
+    restart: unless-stopped
+    environment:
+      ZOOKEEPER_CLIENT_PORT: 2181       # port clients (Kafka brokers) connect to
+      ZOOKEEPER_TICK_TIME: 2000         # heartbeat interval in ms
+    ports:
+      - "2181:2181"
+    networks:
+      - mlops-net
+    healthcheck:
+      test: ["CMD", "bash", "-c", "echo ruok | nc localhost 2181 | grep imok"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  # ── Kafka Broker ──────────────────────────────────────────────────────────
+  # Single-broker Kafka. Exposes two listeners:
+  #   PLAINTEXT_INTERNAL → container-to-container (port 29092)
+  #   PLAINTEXT_EXTERNAL → host machine access   (port 9092)
+  kafka:
+    image: confluentinc/cp-kafka:7.5.0
+    container_name: kafka
+    restart: unless-stopped
+    depends_on:
+      zookeeper:
+        condition: service_healthy
+    ports:
+      - "9092:9092"     # accessible from your host (producer.py, api.py)
+      - "29092:29092"   # internal container-to-container traffic
+    environment:
+      KAFKA_BROKER_ID: 1
+      KAFKA_ZOOKEEPER_CONNECT: "zookeeper:2181"
+
+      # Two listeners: one for Docker network, one for host
+      KAFKA_LISTENER_SECURITY_PROTOCOL_MAP: >-
+        PLAINTEXT_INTERNAL:PLAINTEXT,
+        PLAINTEXT_EXTERNAL:PLAINTEXT
+      KAFKA_ADVERTISED_LISTENERS: >-
+        PLAINTEXT_INTERNAL://kafka:29092,
+        PLAINTEXT_EXTERNAL://localhost:9092
+      KAFKA_INTER_BROKER_LISTENER_NAME: PLAINTEXT_INTERNAL
+
+      # Topic defaults — single broker so replication factor = 1
+      KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR: 1
+      KAFKA_TRANSACTION_STATE_LOG_REPLICATION_FACTOR: 1
+      KAFKA_TRANSACTION_STATE_LOG_MIN_ISR: 1
+
+      # Auto-create the "transactions" topic on first produce
+      KAFKA_AUTO_CREATE_TOPICS_ENABLE: "true"
+
+      # Reduce log verbosity for cleaner terminal output
+      KAFKA_LOG4J_LOGGERS: >-
+        kafka.controller=INFO,
+        kafka.producer.async.DefaultEventHandler=INFO,
+        state.change.logger=INFO
+    networks:
+      - mlops-net
+    healthcheck:
+      test:
+        [
+          "CMD",
+          "kafka-broker-api-versions",
+          "--bootstrap-server",
+          "localhost:29092"
+        ]
+      interval: 15s
+      timeout: 10s
+      retries: 10
+
+  # ── Kafka UI (optional but very helpful for debugging) ────────────────────
+  # Browse topics, messages, and consumer groups at http://localhost:8080
+  kafka-ui:
+    image: provectuslabs/kafka-ui:latest
+    container_name: kafka-ui
+    restart: unless-stopped
+    depends_on:
+      kafka:
+        condition: service_healthy
+    ports:
+      - "8080:8080"
+    environment:
+      KAFKA_CLUSTERS_0_NAME: local-cluster
+      KAFKA_CLUSTERS_0_BOOTSTRAPSERVERS: kafka:29092
+      KAFKA_CLUSTERS_0_ZOOKEEPER: zookeeper:2181
+    networks:
+      - mlops-net
+
+  # ── Redis ─────────────────────────────────────────────────────────────────
+  # Used as the real-time feature store.
+  # Features are written by spark_streaming.py and read by api.py.
+  redis:
+    image: redis:7.2-alpine
+    container_name: redis
+    restart: unless-stopped
+    ports:
+      - "6379:6379"     # default Redis port — accessible from host
+    command: >
+      redis-server
+      --maxmemory 512mb
+      --maxmemory-policy allkeys-lru
+      --save ""
+      --appendonly no
+    networks:
+      - mlops-net
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  # ── MLflow Tracking Server ─────────────────────────────────────────────────
+  # Tracks experiments, parameters, metrics, and stores registered models.
+  # UI available at http://localhost:5001
+  mlflow:
+    image: ghcr.io/mlflow/mlflow:v2.13.0
+    container_name: mlflow
+    restart: unless-stopped
+    ports:
+      - "5001:5000"     # host:container (5001 avoids macOS AirPlay conflict)
+    volumes:
+      - mlflow-data:/mlflow   # persist runs and artifacts across restarts
+    command: >
+      mlflow server
+      --host 0.0.0.0
+      --port 5000
+      --backend-store-uri sqlite:////mlflow/mlflow.db
+      --default-artifact-root /mlflow/artifacts
+    networks:
+      - mlops-net
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:5000/health"]
+      interval: 15s
+      timeout: 10s
+      retries: 5
+
+# ── Named Volumes ─────────────────────────────────────────────────────────────
+volumes:
+  mlflow-data:
+    driver: local   # persists MLflow DB and model artifacts on host
+
+# ── Shared Network ────────────────────────────────────────────────────────────
+# All services share one bridge network so they resolve each other by name
+# (e.g. kafka:29092, redis:6379) without exposing extra ports.
+networks:
+  mlops-net:
+    driver: bridge

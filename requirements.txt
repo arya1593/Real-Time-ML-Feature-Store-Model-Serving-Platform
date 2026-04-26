@@ -1,0 +1,45 @@
+# ─────────────────────────────────────────────────────────────────────────────
+# Real-Time ML Feature Store & Model Serving Platform
+# Requirements — Python 3.11+
+#
+# Install all:
+#   pip install -r requirements.txt
+#
+# Java 11 is also required for PySpark (not managed by pip):
+#   https://adoptium.net
+# ─────────────────────────────────────────────────────────────────────────────
+
+# ── Kafka producer ────────────────────────────────────────────────────────────
+kafka-python==2.3.1             # producer.py — pure-Python Kafka client
+
+# ── Spark Structured Streaming ────────────────────────────────────────────────
+pyspark==3.5.0                  # spark_streaming.py — Kafka connector JAR targets 3.5.x
+                                # Kafka connector fetched at runtime via spark.jars.packages:
+                                #   org.apache.spark:spark-sql-kafka-0-10_2.12:3.5.0
+
+# ── Real-time feature store ───────────────────────────────────────────────────
+redis==7.4.0                    # spark_streaming.py + api.py — Redis client
+
+# ── Model training ────────────────────────────────────────────────────────────
+scikit-learn==1.8.0             # train_model.py — Random Forest + metrics
+numpy==2.4.4                    # train_model.py — array operations
+pandas==2.3.3                   # train_model.py — CSV loading + data prep
+
+# ── MLflow experiment tracking & model registry ───────────────────────────────
+mlflow==3.11.1                  # train_model.py + api.py — tracking + serving
+
+# ── FastAPI model serving ─────────────────────────────────────────────────────
+fastapi==0.136.1                # api.py — REST framework
+uvicorn==0.46.0                 # api.py — ASGI server
+pydantic==2.13.3                # api.py — request/response validation (FastAPI dep)
+
+# ── Drift monitoring ──────────────────────────────────────────────────────────
+matplotlib==3.10.9              # drift_check.py — dashboard plots
+
+# ── Streamlit demo dashboard ──────────────────────────────────────────────────
+streamlit==1.45.0               # dashboard.py — interactive demo UI
+plotly==6.1.1                   # dashboard.py — gauge charts + interactive plots
+joblib==1.5.0                   # dashboard.py — load model.joblib without MLflow
+
+# ── QR code generation ────────────────────────────────────────────────────────
+qrcode[pil]==8.2                # generate_qr.py — QR code image for demo URL
