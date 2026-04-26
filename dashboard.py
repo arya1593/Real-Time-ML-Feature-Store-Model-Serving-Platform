@@ -232,11 +232,9 @@ Then try **"Normal Online Purchase"** and watch it flip to ✅ **LEGIT**.
 
 ---
 
-### Explore the 4 tabs
+### Explore the 2 tabs
 - **🔍 Make a Prediction** — test any transaction
 - **📋 Prediction History** — see all your tests this session
-- **📈 Drift Monitor** — track fraud rate over time
-- **🤖 Model Info** — see how accurate the AI is
 """)
     st.divider()
     if st.button("🚀 Let's Go!", type="primary", use_container_width=True):
